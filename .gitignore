@@ -1,2 +1,5 @@
 target
 .DS_Store
+.idea
+kake.iml
+kake.ipr
