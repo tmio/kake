@@ -13,18 +13,18 @@ import org.junit.platform.runner.JUnitPlatform
 import org.junit.runner.RunWith
 
 object Debug {
-  var str : StringBuilder = StringBuilder()
+    var str: StringBuilder = StringBuilder()
 }
 
 @RunWith(JUnitPlatform::class)
 class KakeSpec : Spek({
 
-    fun ExpectAny<()->Unit>.raise(message: String): ExpectAny<()->Unit> {
-        this.satisfy({subject ->
+    fun ExpectAny<() -> Unit>.raise(message: String): ExpectAny<() -> Unit> {
+        this.satisfy({ subject ->
             try {
                 subject.invoke()
                 false
-            } catch(e : Exception) {
+            } catch(e: Exception) {
                 e.message?.contains(message)!!
             }
         })
@@ -73,7 +73,7 @@ class KakeSpec : Spek({
 
             it("should allow adding lambas to its definition") {
                 var task = Kake.task("something")
-                task.enhance({ print("Hello")}, {print("World")})
+                task.enhance({ print("Hello") }, { print("World") })
                 task.lambdas.size.should.equal(2)
             }
 
@@ -88,7 +88,7 @@ class KakeSpec : Spek({
 
         describe(".execute") {
             it("should run all the lambdas") {
-                var counter : Int = 0
+                var counter: Int = 0
                 val task = Kake.task("something")
                 task.enhance({ counter += 1 }, { counter += 1 })
                 task.execute()
@@ -178,7 +178,7 @@ class KakeSpec : Spek({
 
         describe("A Kakefile is present") {
 
-            fun Kake.append(arg : String) {
+            fun Kake.append(arg: String) {
                 Debug.str.append(arg)
             }
 
@@ -186,16 +186,16 @@ class KakeSpec : Spek({
                 Debug.str = StringBuilder()
                 java.io.File("Kakefile").writeText(
                         "import io.tmio.kake.Debug\n" +
-                        "task(\"foo\", { Debug.str.append(\"foo\") })\n" +
-                        "task(\"bar\", { Debug.str.append(\"bar\") })\n")
+                                "task(\"foo\", { Debug.str.append(\"foo\") })\n" +
+                                "task(\"bar\", { Debug.str.append(\"bar\") })\n")
             }
 
-            it ("should invoke one or more tasks") {
+            it("should invoke one or more tasks") {
                 Kake.main(arrayOf("foo", "bar"))
                 Debug.str.toString().should.equal("foobar")
             }
 
-            it ("should raise an exception if no task by that name exists") {
+            it("should raise an exception if no task by that name exists") {
                 { Kake.main(arrayOf("foo", "else")) }.should.raise("Don't know how to build task")
                 Debug.str.toString().should.equal("foo")
             }
@@ -205,24 +205,24 @@ class KakeSpec : Spek({
     describe(".run") {
 
 
-            var str : StringBuilder = StringBuilder()
-            beforeEachTest {
-                java.io.File("Kakefile").createNewFile()
+        var str: StringBuilder = StringBuilder()
+        beforeEachTest {
+            java.io.File("Kakefile").createNewFile()
 
-                str = StringBuilder()
-                val task = Kake.task("foo", { str.append("foo") })
-                val task2 = Kake.task("bar", { str.append("bar") })
-            }
+            str = StringBuilder()
+            val task = Kake.task("foo", { str.append("foo") })
+            val task2 = Kake.task("bar", { str.append("bar") })
+        }
 
-                    it ("should invoke one or more tasks") {
-                Kake.run("foo", "bar")
-                str.toString().should.equal("foobar")
-            }
+        it("should invoke one or more tasks") {
+            Kake.run("foo", "bar")
+            str.toString().should.equal("foobar")
+        }
 
-                    it ("should raise an exception if no task by that name exists") {
-                { Kake.run("foo", "else") }.should.raise("Don't know how to build task")
-                str.toString().should.equal("foo")
-            }
+        it("should raise an exception if no task by that name exists") {
+            { Kake.run("foo", "else") }.should.raise("Don't know how to build task")
+            str.toString().should.equal("foo")
+        }
 
     }
 })

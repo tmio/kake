@@ -86,7 +86,7 @@ open class Task(val name: String) {
 
     fun execute() {
         if (executed) {
-           return;
+            return
         }
         for (dep in dependencies) {
             dep.execute()
