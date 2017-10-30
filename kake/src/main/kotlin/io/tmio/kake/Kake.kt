@@ -6,6 +6,8 @@ import java.nio.charset.Charset
 class Kake {
     companion object {
 
+        var kakefileNames = mutableListOf("Kakefile")
+
         var allTasks = mutableSetOf<Task>()
 
         @JvmStatic fun main(args: Array<String>) {
@@ -15,8 +17,13 @@ class Kake {
         }
 
         fun find_kakefile(): java.io.File {
-            val folder = java.io.File(".").walkBottomUp().asIterable().firstOrNull { java.io.File(it, "Kakefile").exists() }
-            return if (folder != null) java.io.File(folder, "Kakefile") else throw RuntimeException("Could not find Kakefile")
+            for (kakefileName in kakefileNames) {
+                val folder = java.io.File(".").walkBottomUp().asIterable().firstOrNull { java.io.File(it, kakefileName).exists() }
+                if (folder != null) {
+                    return java.io.File(folder, kakefileName)
+                }
+            }
+            throw RuntimeException("Could not find Kakefile")
         }
 
         fun eval(file: java.io.File) {
@@ -35,14 +42,14 @@ class Kake {
             return task(Task(name), *lambdas)
         }
 
-        fun file(name: String, vararg lambdas: ()->Unit): Task {
+        fun file(name: String, vararg lambdas: ()->Unit): File {
             return task(File(name), *lambdas)
         }
 
-        fun task(task : Task, vararg lambdas: ()->Unit): Task {
-            var newTask = task
+        fun <T: Task> task(task : T, vararg lambdas: ()->Unit): T {
+            var newTask : T = task
             if (!allTasks.add(newTask)) {
-                newTask = allTasks.first { it.equals(newTask) }
+                newTask = allTasks.first { it.equals(newTask) } as T
             }
             newTask.enhance(*lambdas)
             return newTask
@@ -110,7 +117,7 @@ open class Task(val name: String) {
     }
 }
 
-class File(name : String) : Task(name) {
+open class File(name : String) : Task(name) {
 
     override fun needed() : Boolean {
         return !java.io.File(name).exists()

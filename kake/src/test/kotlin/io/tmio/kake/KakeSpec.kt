@@ -12,6 +12,9 @@ import org.jetbrains.spek.api.dsl.on
 import org.junit.platform.runner.JUnitPlatform
 import org.junit.runner.RunWith
 
+import io.tmio.kake.Kake.Companion.file
+import io.tmio.kake.Kake.Companion.task
+
 object Debug {
     var str: StringBuilder = StringBuilder()
 }
@@ -50,37 +53,37 @@ class KakeSpec : Spek({
 
     describe("task") {
         it("should return a task object") {
-            var task = Kake.task("something")
+            var task = task("something")
             task.should.not.be.`null`
         }
 
         it("should add the task to the list of global tasks") {
-            var task = Kake.task("something")
+            var task = task("something")
             Kake.allTasks.should.equal(setOf(task))
         }
 
         it("should not add the same task twice") {
-            var task = Kake.task("something")
-            var task2 = Kake.task("something")
+            var task = task("something")
+            var task2 = task("something")
             Kake.allTasks.should.equal(setOf(task))
             (task == task2).should.be.`true`
         }
 
         describe(".enhance") {
             it("should return self") {
-                Kake.task("something").enhance(Kake.task("somethingelse")).should.equal(Kake.task("something"))
+                task("something").enhance(task("somethingelse")).should.equal(task("something"))
             }
 
             it("should allow adding lambas to its definition") {
-                var task = Kake.task("something")
+                var task = task("something")
                 task.enhance({ print("Hello") }, { print("World") })
                 task.lambdas.size.should.equal(2)
             }
 
             it("should allow adding tasks to its definition") {
-                val foo = Kake.task("foo")
-                var bar = Kake.task("bar")
-                val foobar = Kake.task("foobar")
+                val foo = task("foo")
+                var bar = task("bar")
+                val foobar = task("foobar")
                 foobar.enhance(foo, bar)
                 foobar.dependencies.size.should.equal(2)
             }
@@ -89,7 +92,7 @@ class KakeSpec : Spek({
         describe(".execute") {
             it("should run all the lambdas") {
                 var counter: Int = 0
-                val task = Kake.task("something")
+                val task = task("something")
                 task.enhance({ counter += 1 }, { counter += 1 })
                 task.execute()
                 counter.should.equal(2)
@@ -97,7 +100,7 @@ class KakeSpec : Spek({
 
             it("should run lambdas in the order they were added to the task") {
                 val str = StringBuilder()
-                var task = Kake.task("something")
+                var task = task("something")
                 task.enhance({ str.append("Hello ") }, { str.append("World") })
                 task.execute()
                 str.toString().should.equal("Hello World")
@@ -105,9 +108,9 @@ class KakeSpec : Spek({
 
             it("should execute the dependencies first") {
                 val str = StringBuilder()
-                val task = Kake.task("something")
+                val task = task("something")
                 task.enhance({ str.append("World") })
-                val dep = Kake.task("before")
+                val dep = task("before")
                 dep.enhance({ str.append("Hello ") })
                 task.enhance(dep)
                 task.execute()
@@ -116,10 +119,10 @@ class KakeSpec : Spek({
 
             it("should run dependencies one time only") {
                 val str = StringBuilder()
-                val root = Kake.task("root", { str.append("Hello ") })
-                val task = Kake.task("something", { str.append("World") })
-                val dep = Kake.task("before", { str.append("Kake ") })
-                val dep2 = Kake.task("before", { str.append("Kake ") })
+                val root = task("root", { str.append("Hello ") })
+                val task = task("something", { str.append("World") })
+                val dep = task("before", { str.append("Kake ") })
+                val dep2 = task("before", { str.append("Kake ") })
                 dep.enhance(root)
                 dep2.enhance(root)
                 task.enhance(dep, dep2)
@@ -130,19 +133,19 @@ class KakeSpec : Spek({
 
         describe(".needed") {
             it("should return true by default") {
-                Kake.task("something").needed().should.equal(true)
+                task("something").needed().should.equal(true)
             }
         }
     }
 
     describe(".file") {
         it("should define a task, associated with a file") {
-            val file = Kake.file("foobar.txt")
+            val file = file("foobar.txt")
             expect(file is File).to.equal(true)
         }
 
         it("should be needed if the file doesn't exist") {
-            val file = Kake.file("foobar.txt")
+            val file = file("foobar.txt")
             file.needed().should.equal(true)
             java.io.File("foobar.txt").writeText("hello")
             file.needed().should.equal(false)
@@ -155,13 +158,13 @@ class KakeSpec : Spek({
         }
 
         it("should return tasks with no dependencies") {
-            Kake.task("something")
+            task("something")
             Kake.tasks().size.should.equal(1)
         }
 
         it("should not return tasks with dependencies") {
-            val task = Kake.task("foo")
-            val task2 = Kake.task("bar")
+            val task = task("foo")
+            val task2 = task("bar")
             task.enhance(task2)
             Kake.tasks().size.should.equal(1)
             Kake.tasks().first().should.equal(task)
@@ -200,6 +203,15 @@ class KakeSpec : Spek({
                 Debug.str.toString().should.equal("foo")
             }
         }
+
+        describe("We use a different Kakefile file name") {
+            it("should allow to use a different file name") {
+                java.io.File("InterestingFile").writeText(
+                        "task(\"foo\")")
+                Kake.kakefileNames.add("InterestingFile")
+                Kake.main(arrayOf("foo"))
+            }
+        }
     }
 
     describe(".run") {
@@ -210,8 +222,8 @@ class KakeSpec : Spek({
             java.io.File("Kakefile").createNewFile()
 
             str = StringBuilder()
-            val task = Kake.task("foo", { str.append("foo") })
-            val task2 = Kake.task("bar", { str.append("bar") })
+            task("foo", { str.append("foo") })
+            task("bar", { str.append("bar") })
         }
 
         it("should invoke one or more tasks") {
